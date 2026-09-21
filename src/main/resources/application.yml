@@ -1,0 +1,10 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: mini-banking-api
+
+app:
+  version: 1.0.0
+  environment: development
