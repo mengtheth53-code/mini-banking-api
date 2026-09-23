@@ -1,0 +1,166 @@
+{
+  "info": {
+    "_postman_id": "b3c89f50-6d42-4f9e-9988-mini-banking-v1",
+    "name": "Mini Banking API",
+    "description": "Postman Collection for Mini Banking API - Junior Backend Developer Master Plan",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "health"]
+        }
+      }
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "1. Get All Users (200 OK)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"]
+            }
+          }
+        },
+        {
+          "name": "2. Get User By ID (200 OK)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "1"]
+            }
+          }
+        },
+        {
+          "name": "3. Create User (201 Created)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Sokha Chan\",\n  \"email\": \"sokha.chan@bank.com\",\n  \"role\": \"USER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"]
+            }
+          }
+        },
+        {
+          "name": "4. Update User Full - PUT (200 OK)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Sokha Chan Updated\",\n  \"email\": \"sokha.updated@bank.com\",\n  \"role\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "2"]
+            }
+          }
+        },
+        {
+          "name": "5. Update User Partial - PATCH (200 OK)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Sokha Chan Patched\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "2"]
+            }
+          }
+        },
+        {
+          "name": "6. Delete User (204 No Content)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "2"]
+            }
+          }
+        },
+        {
+          "name": "7. Error Test: User Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "999"]
+            }
+          }
+        },
+        {
+          "name": "8. Error Test: Duplicate Email (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Admin Duplicate\",\n  \"email\": \"admin@minibank.com\",\n  \"role\": \"USER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
