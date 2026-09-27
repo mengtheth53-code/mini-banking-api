@@ -5,6 +5,24 @@ spring:
   application:
     name: mini-banking-api
 
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/minibanking}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # In development: 'update' automatically creates/alters tables based on @Entity.
+      # In production: ALWAYS use 'validate' or 'none' with database migration tools!
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
 app:
   version: 1.0.0
   environment: development

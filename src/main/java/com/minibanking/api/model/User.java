@@ -1,17 +1,40 @@
 package com.minibanking.api.model;
 
+import jakarta.persistence.*;
 import java.time.Instant;
 
 /**
- * Domain model representing a Bank User.
+ * JPA Entity mapped to the PostgreSQL "users" table.
+ * 
+ * - @Entity: Marks this class as a persistent database entity managed by Hibernate.
+ * - @Table: Specifies the physical database table name ("users").
+ * - @Id: Declares the Primary Key.
+ * - @GeneratedValue: Uses PostgreSQL BIGSERIAL / IDENTITY auto-incrementing strategy.
  */
+@Entity
+@Table(name = "users")
 public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
+
+    @Column(name = "email", nullable = false, unique = true, length = 150)
     private String email;
-    private String role; // e.g. "USER", "ADMIN"
+
+    @Column(name = "role", nullable = false, length = 20)
+    private String role; // "USER", "ADMIN"
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    /**
+     * Default no-arg constructor required by JPA specification
+     * for Hibernate reflection and entity instantiation.
+     */
     public User() {
     }
 
@@ -21,6 +44,17 @@ public class User {
         this.email = email;
         this.role = role;
         this.createdAt = createdAt;
+    }
+
+    /**
+     * JPA Entity Lifecycle Callback:
+     * Automatically sets createdAt right before Hibernate issues the SQL INSERT.
+     */
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
     }
 
     public Long getId() {
