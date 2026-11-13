@@ -29,7 +29,7 @@ class AccountRepositoryTest {
     @Test
     @DisplayName("Should persist Account linked to User via @ManyToOne relationship")
     void saveAccount_LinkedToUser() {
-        User user = userRepository.save(new User(null, "Bunheng Vorn", "bunheng@bank.com", "USER", null));
+        User user = userRepository.save(new User(null, "Bunheng Vorn", "bunheng@bank.com", "pass123", "ROLE_USER", null));
 
         Account account = new Account(null, "ACC-10001", AccountType.SAVINGS, new BigDecimal("500.00"), AccountStatus.ACTIVE, user);
         Account savedAccount = accountRepository.save(account);
@@ -43,7 +43,7 @@ class AccountRepositoryTest {
     @Test
     @DisplayName("Cascading: Saving User with addAccount() should automatically persist the Account")
     void cascadeSave_FromUserToAccount() {
-        User user = new User(null, "Chanry Mao", "chanry@bank.com", "USER", null);
+        User user = new User(null, "Chanry Mao", "chanry@bank.com", "pass123", "ROLE_USER", null);
         Account account = new Account(null, "ACC-20002", AccountType.CHECKING, new BigDecimal("1200.50"), AccountStatus.ACTIVE, null);
         user.addAccount(account);
 
@@ -58,13 +58,12 @@ class AccountRepositoryTest {
     @Test
     @DisplayName("Pagination: Should retrieve paginated and sorted accounts")
     void pagination_ShouldReturnPagedResults() {
-        User user = userRepository.save(new User(null, "Owner", "owner@bank.com", "USER", null));
+        User user = userRepository.save(new User(null, "Owner", "owner@bank.com", "pass123", "ROLE_USER", null));
 
         accountRepository.save(new Account(null, "ACC-003", AccountType.SAVINGS, new BigDecimal("300"), AccountStatus.ACTIVE, user));
         accountRepository.save(new Account(null, "ACC-001", AccountType.CHECKING, new BigDecimal("100"), AccountStatus.ACTIVE, user));
         accountRepository.save(new Account(null, "ACC-002", AccountType.SAVINGS, new BigDecimal("200"), AccountStatus.ACTIVE, user));
 
-        // Request Page 0 with PageSize 2, sorted by accountNumber ASC
         PageRequest pageRequest = PageRequest.of(0, 2, Sort.by("accountNumber").ascending());
         Page<Account> page = accountRepository.findByUserId(user.getId(), pageRequest);
 

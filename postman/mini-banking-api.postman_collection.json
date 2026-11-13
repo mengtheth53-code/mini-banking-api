@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "b3c89f50-6d42-4f9e-9988-mini-banking-v1",
-    "name": "Mini Banking API",
-    "description": "Postman Collection for Mini Banking API - Junior Backend Developer Master Plan",
+    "_postman_id": "b3c89f50-6d42-4f9e-9988-mini-banking-v2",
+    "name": "Mini Banking API (Complete Portfolio)",
+    "description": "Complete Postman Collection for Mini Banking API - Includes JWT Authentication, Account Management, Deposit/Withdraw, @Transactional Fund Transfers with Rollback proof, and Paginated Statements.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -10,154 +10,259 @@
       "key": "baseUrl",
       "value": "http://localhost:8080",
       "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sourceAccount",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "targetAccount",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
     {
-      "name": "Health Check",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "health"]
-        }
-      }
-    },
-    {
-      "name": "Users",
+      "name": "0. System Health",
       "item": [
         {
-          "name": "1. Get All Users (200 OK)",
+          "name": "Health Check",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users"]
+            "url": "{{baseUrl}}/api/v1/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Authentication & JWT",
+      "item": [
+        {
+          "name": "Register User 1 (Sender)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
             }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Alice Sender\",\n  \"email\": \"alice@bank.com\",\n  \"password\": \"password123\",\n  \"role\": \"ROLE_USER\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register"
           }
         },
         {
-          "name": "2. Get User By ID (200 OK)",
+          "name": "Register User 2 (Receiver)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "1"]
-            }
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Bob Receiver\",\n  \"email\": \"bob@bank.com\",\n  \"password\": \"password123\",\n  \"role\": \"ROLE_USER\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register"
           }
         },
         {
-          "name": "3. Create User (201 Created)",
+          "name": "Login (Alice)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@bank.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Bank Accounts",
+      "item": [
+        {
+          "name": "Open Account (Alice - Checking)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accountNumber) {",
+                  "    pm.collectionVariables.set('sourceAccount', jsonData.accountNumber);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Sokha Chan\",\n  \"email\": \"sokha.chan@bank.com\",\n  \"role\": \"USER\"\n}"
+              "raw": "{\n  \"accountType\": \"CHECKING\",\n  \"initialDeposit\": 1000.00\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users"]
-            }
+            "url": "{{baseUrl}}/api/v1/accounts"
           }
         },
         {
-          "name": "4. Update User Full - PUT (200 OK)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Sokha Chan Updated\",\n  \"email\": \"sokha.updated@bank.com\",\n  \"role\": \"ADMIN\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/2",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "2"]
-            }
-          }
-        },
-        {
-          "name": "5. Update User Partial - PATCH (200 OK)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Sokha Chan Patched\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/2",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "2"]
-            }
-          }
-        },
-        {
-          "name": "6. Delete User (204 No Content)",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/2",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "2"]
-            }
-          }
-        },
-        {
-          "name": "7. Error Test: User Not Found (404)",
+          "name": "Get My Accounts",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/999",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "999"]
-            }
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/v1/accounts/me"
           }
         },
         {
-          "name": "8. Error Test: Duplicate Email (409)",
+          "name": "Get Account Details & Balance",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/v1/accounts/{{sourceAccount}}"
+          }
+        },
+        {
+          "name": "Deposit Funds",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Admin Duplicate\",\n  \"email\": \"admin@minibank.com\",\n  \"role\": \"USER\"\n}"
+              "raw": "{\n  \"accountNumber\": \"{{sourceAccount}}\",\n  \"amount\": 250.00,\n  \"description\": \"Paycheck bonus\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users"]
-            }
+            "url": "{{baseUrl}}/api/v1/accounts/deposit"
+          }
+        },
+        {
+          "name": "Withdraw Funds",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{sourceAccount}}\",\n  \"amount\": 50.00,\n  \"description\": \"ATM Cash\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/accounts/withdraw"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Fund Transfers & @Transactional",
+      "item": [
+        {
+          "name": "Safe Atomic Transfer (Success)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{sourceAccount}}\",\n  \"targetAccountNumber\": \"{{targetAccount}}\",\n  \"amount\": 150.00,\n  \"description\": \"Shared dinner expense\",\n  \"simulateFailure\": false\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/transfers"
+          }
+        },
+        {
+          "name": "Demonstrate Rollback (simulateFailure = true)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{sourceAccount}}\",\n  \"targetAccountNumber\": \"{{targetAccount}}\",\n  \"amount\": 100.00,\n  \"description\": \"Forced rollback test\",\n  \"simulateFailure\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/transfers"
+          }
+        },
+        {
+          "name": "Error: Insufficient Funds",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{sourceAccount}}\",\n  \"targetAccountNumber\": \"{{targetAccount}}\",\n  \"amount\": 999999.00,\n  \"description\": \"Overdraft\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/transfers"
+          }
+        },
+        {
+          "name": "Error: Self Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{sourceAccount}}\",\n  \"targetAccountNumber\": \"{{sourceAccount}}\",\n  \"amount\": 10.00,\n  \"description\": \"Self transfer\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/transfers"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Statements & History",
+      "item": [
+        {
+          "name": "Get Account Statement (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/v1/accounts/{{sourceAccount}}/transactions?page=0&size=10"
           }
         }
       ]

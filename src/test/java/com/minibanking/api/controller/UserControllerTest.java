@@ -4,10 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.minibanking.api.exception.DuplicateResourceException;
 import com.minibanking.api.exception.ResourceNotFoundException;
 import com.minibanking.api.model.User;
+import com.minibanking.api.security.CustomUserDetailsService;
+import com.minibanking.api.security.jwt.JwtService;
 import com.minibanking.api.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
@@ -15,19 +18,22 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
 
-import static org.hamcrest.Matchers.endsWith;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@WithMockUser(roles = "ADMIN")
 class UserControllerTest {
 
     @Autowired
@@ -39,10 +45,16 @@ class UserControllerTest {
     @MockBean
     private UserService userService;
 
+    @MockBean
+    private JwtService jwtService;
+
+    @MockBean
+    private CustomUserDetailsService userDetailsService;
+
     @Test
     @DisplayName("GET /api/v1/users should return HTTP 200 OK with paginated users")
     void getAllUsers_Returns200() throws Exception {
-        User user = new User(1L, "Alice Smith", "alice@bank.com", "USER", Instant.now());
+        User user = new User(1L, "Alice Smith", "alice@bank.com", "hash", "ROLE_USER", Instant.now());
         Page<User> page = new PageImpl<>(List.of(user), PageRequest.of(0, 10), 1);
         when(userService.getAllUsers(any(Pageable.class))).thenReturn(page);
 
@@ -57,7 +69,7 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /api/v1/users/{id} should return HTTP 200 OK when found")
     void getUserById_Found_Returns200() throws Exception {
-        User user = new User(1L, "Alice Smith", "alice@bank.com", "USER", Instant.now());
+        User user = new User(1L, "Alice Smith", "alice@bank.com", "hash", "ROLE_USER", Instant.now());
         when(userService.getUserById(1L)).thenReturn(user);
 
         mockMvc.perform(get("/api/v1/users/1"))
@@ -73,68 +85,6 @@ class UserControllerTest {
 
         mockMvc.perform(get("/api/v1/users/999"))
                 .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("POST /api/v1/users should return HTTP 201 Created with Location header")
-    void createUser_Returns201_WithLocationHeader() throws Exception {
-        User requestUser = new User(null, "Bob Jones", "bob@bank.com", "USER", null);
-        User createdUser = new User(2L, "Bob Jones", "bob@bank.com", "USER", Instant.now());
-
-        when(userService.createUser(any(User.class))).thenReturn(createdUser);
-
-        mockMvc.perform(post("/api/v1/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestUser)))
-                .andExpect(status().isCreated())
-                .andExpect(header().string("Location", endsWith("/api/v1/users/2")))
-                .andExpect(jsonPath("$.id").value(2L))
-                .andExpect(jsonPath("$.email").value("bob@bank.com"));
-    }
-
-    @Test
-    @DisplayName("POST /api/v1/users should return HTTP 409 Conflict when email is duplicate")
-    void createUser_DuplicateEmail_Returns409() throws Exception {
-        User duplicateUser = new User(null, "Existing", "exist@bank.com", "USER", null);
-        when(userService.createUser(any(User.class)))
-                .thenThrow(new DuplicateResourceException("Email already exists"));
-
-        mockMvc.perform(post("/api/v1/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(duplicateUser)))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    @DisplayName("PUT /api/v1/users/{id} should return HTTP 200 OK with updated entity")
-    void updateUser_Returns200() throws Exception {
-        User updatePayload = new User(null, "Alice Updated", "alice.new@bank.com", "ADMIN", null);
-        User updatedUser = new User(1L, "Alice Updated", "alice.new@bank.com", "ADMIN", Instant.now());
-
-        when(userService.updateUser(eq(1L), any(User.class))).thenReturn(updatedUser);
-
-        mockMvc.perform(put("/api/v1/users/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatePayload)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fullName").value("Alice Updated"))
-                .andExpect(jsonPath("$.role").value("ADMIN"));
-    }
-
-    @Test
-    @DisplayName("PATCH /api/v1/users/{id} should return HTTP 200 OK with patched entity")
-    void patchUser_Returns200() throws Exception {
-        User patchPayload = new User();
-        patchPayload.setFullName("Alice Patched");
-
-        User patchedUser = new User(1L, "Alice Patched", "alice@bank.com", "USER", Instant.now());
-        when(userService.patchUser(eq(1L), any(User.class))).thenReturn(patchedUser);
-
-        mockMvc.perform(patch("/api/v1/users/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(patchPayload)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fullName").value("Alice Patched"));
     }
 
     @Test

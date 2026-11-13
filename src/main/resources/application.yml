@@ -13,16 +13,39 @@ spring:
 
   jpa:
     hibernate:
-      # In development: 'update' automatically creates/alters tables based on @Entity.
-      # In production: ALWAYS use 'validate' or 'none' with database migration tools!
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     open-in-view: false
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-app:
-  version: 1.0.0
-  environment: development
+jwt:
+  secret: ${JWT_SECRET:MiniBankingSuperSecretKeyForJwtSigningMustBeAtLeast256BitsLong2026!}
+  expiration-hours: 24
+
+logging:
+  level:
+    root: INFO
+    com.minibanking.api: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    hibernate:
+      # Banking Production Standard: Never allow automatic DDL updates in production!
+      ddl-auto: validate
+    show-sql: false
+
+logging:
+  level:
+    root: INFO
+    com.minibanking.api: INFO
+    org.hibernate.SQL: ERROR

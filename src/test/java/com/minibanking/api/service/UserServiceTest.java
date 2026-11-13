@@ -31,8 +31,8 @@ class UserServiceTest {
     @Test
     @DisplayName("createUser should successfully save and return user when email is unique")
     void createUser_Success() {
-        User input = new User(null, "John Doe", "john@bank.com", "USER", null);
-        User saved = new User(1L, "John Doe", "john@bank.com", "USER", Instant.now());
+        User input = new User(null, "John Doe", "john@bank.com", "pass123", "ROLE_USER", null);
+        User saved = new User(1L, "John Doe", "john@bank.com", "pass123", "ROLE_USER", Instant.now());
 
         when(userRepository.existsByEmail("john@bank.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(saved);
@@ -48,7 +48,7 @@ class UserServiceTest {
     @Test
     @DisplayName("createUser should throw DuplicateResourceException when email already exists")
     void createUser_DuplicateEmail_ThrowsException() {
-        User duplicate = new User(null, "Jane Doe", "existing@bank.com", "USER", null);
+        User duplicate = new User(null, "Jane Doe", "existing@bank.com", "pass123", "ROLE_USER", null);
 
         when(userRepository.existsByEmail("existing@bank.com")).thenReturn(true);
 
@@ -72,7 +72,7 @@ class UserServiceTest {
     @Test
     @DisplayName("deleteUser should successfully call repository delete when user exists")
     void deleteUser_Success() {
-        User user = new User(1L, "Bob", "bob@bank.com", "USER", Instant.now());
+        User user = new User(1L, "Bob", "bob@bank.com", "pass123", "ROLE_USER", Instant.now());
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         userService.deleteUser(1L);

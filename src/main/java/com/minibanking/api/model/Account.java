@@ -4,16 +4,23 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.minibanking.api.model.enums.AccountStatus;
 import com.minibanking.api.model.enums.AccountType;
 import jakarta.persistence.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
  * JPA Entity representing a Customer Bank Account.
- * Linked to User via @ManyToOne relationship.
+ * 
+ * Soft Delete Pattern:
+ * - When deleted, sets is_deleted = true.
+ * - Queries automatically exclude closed/deleted accounts.
  */
 @Entity
 @Table(name = "accounts")
+@SQLDelete(sql = "UPDATE accounts SET is_deleted = true, status = 'CLOSED' WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class Account {
 
     @Id
@@ -27,7 +34,7 @@ public class Account {
     @Column(name = "account_type", nullable = false, length = 20)
     private AccountType accountType;
 
-    // Banking Rule: Always use BigDecimal for money to avoid IEEE-754 floating point rounding errors!
+    // Banking Rule: Always use BigDecimal for money to avoid floating point inaccuracies!
     @Column(name = "balance", nullable = false, precision = 19, scale = 4)
     private BigDecimal balance;
 
@@ -35,7 +42,9 @@ public class Account {
     @Column(name = "status", nullable = false, length = 20)
     private AccountStatus status;
 
-    // LAZY loading ensures customer accounts are not loaded unless explicitly requested
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
@@ -54,6 +63,7 @@ public class Account {
         this.balance = balance != null ? balance : BigDecimal.ZERO;
         this.status = status != null ? status : AccountStatus.ACTIVE;
         this.user = user;
+        this.isDeleted = false;
     }
 
     @PrePersist
@@ -107,6 +117,14 @@ public class Account {
 
     public void setStatus(AccountStatus status) {
         this.status = status;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
 
     public User getUser() {

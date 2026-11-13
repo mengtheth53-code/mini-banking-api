@@ -2,17 +2,25 @@ package com.minibanking.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * JPA Entity mapped to the PostgreSQL "users" table.
- * Linked to Account via @OneToMany relationship.
+ * JPA Entity representing a Bank User.
+ * 
+ * Soft Delete Pattern:
+ * - @SQLDelete intercepts SQL DELETE and converts it to an UPDATE setting is_deleted = true.
+ * - @SQLRestriction appends 'is_deleted = false' to all queries automatically.
+ * Banking Principle: Financial institutions NEVER hard-delete customer records due to compliance regulations.
  */
 @Entity
 @Table(name = "users")
+@SQLDelete(sql = "UPDATE users SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class User {
 
     @Id
@@ -25,19 +33,19 @@ public class User {
     @Column(name = "email", nullable = false, unique = true, length = 150)
     private String email;
 
+    @Column(name = "password", nullable = false, length = 255)
+    @JsonIgnore
+    private String password;
+
     @Column(name = "role", nullable = false, length = 20)
-    private String role; // "USER", "ADMIN"
+    private String role; // "ROLE_USER", "ROLE_ADMIN"
+
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    /**
-     * One User can own Many Bank Accounts.
-     * - mappedBy = "user": Indicates the foreign key is managed by the 'user' field in Account.
-     * - cascade = CascadeType.ALL: Operations on User (persist, remove) cascade to their Accounts.
-     * - orphanRemoval = true: Removing an account from this list deletes it from the database.
-     * - fetch = FetchType.LAZY: Accounts are NOT loaded until explicitly accessed.
-     */
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Account> accounts = new ArrayList<>();
@@ -45,12 +53,14 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String fullName, String email, String role, Instant createdAt) {
+    public User(Long id, String fullName, String email, String password, String role, Instant createdAt) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
+        this.password = password;
         this.role = role;
         this.createdAt = createdAt;
+        this.isDeleted = false;
     }
 
     @PrePersist
@@ -58,9 +68,11 @@ public class User {
         if (this.createdAt == null) {
             this.createdAt = Instant.now();
         }
+        if (this.role == null || this.role.isBlank()) {
+            this.role = "ROLE_USER";
+        }
     }
 
-    // Helper methods for bidirectional synchronization
     public void addAccount(Account account) {
         accounts.add(account);
         account.setUser(this);
@@ -95,12 +107,28 @@ public class User {
         this.email = email;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public String getRole() {
         return role;
     }
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
 
     public Instant getCreatedAt() {
