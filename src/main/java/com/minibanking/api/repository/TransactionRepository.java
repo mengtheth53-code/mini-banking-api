@@ -17,8 +17,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     Optional<Transaction> findByTransactionReference(String transactionReference);
 
     @Query("SELECT t FROM Transaction t WHERE (t.sourceAccountNumber = :acc OR t.targetAccountNumber = :acc) " +
-           "AND (:startDate IS NULL OR t.timestamp >= :startDate) " +
-           "AND (:endDate IS NULL OR t.timestamp <= :endDate) " +
+           "AND t.timestamp >= :startDate AND t.timestamp <= :endDate " +
            "ORDER BY t.timestamp DESC")
     Page<Transaction> findAccountStatement(
             @Param("acc") String accountNumber,

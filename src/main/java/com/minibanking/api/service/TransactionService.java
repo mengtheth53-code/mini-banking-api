@@ -44,7 +44,10 @@ public class TransactionService {
             throw new UnauthorizedAccountAccessException("You can only view statements for your own accounts");
         }
 
-        Page<Transaction> txPage = transactionRepository.findAccountStatement(accountNumber, startDate, endDate, pageable);
+        Instant effectiveStart = (startDate != null) ? startDate : Instant.EPOCH;
+        Instant effectiveEnd = (endDate != null) ? endDate : Instant.now().plus(java.time.Duration.ofDays(36500));
+
+        Page<Transaction> txPage = transactionRepository.findAccountStatement(accountNumber, effectiveStart, effectiveEnd, pageable);
         return txPage.map(this::mapToResponse);
     }
 
