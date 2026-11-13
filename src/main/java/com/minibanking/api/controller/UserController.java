@@ -2,21 +2,24 @@ package com.minibanking.api.controller;
 
 import com.minibanking.api.model.User;
 import com.minibanking.api.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 /**
- * REST Controller adhering strictly to RESTful & HTTP standards:
- * - GET    /api/v1/users        -> 200 OK
- * - GET    /api/v1/users/{id}   -> 200 OK (or 404 Not Found)
- * - POST   /api/v1/users        -> 201 Created with Location header
- * - PUT    /api/v1/users/{id}   -> 200 OK (Full Update / Idempotent)
- * - PATCH  /api/v1/users/{id}   -> 200 OK (Partial Update)
- * - DELETE /api/v1/users/{id}   -> 204 No Content (Idempotent)
+ * REST Controller adhering strictly to RESTful, HTTP & Pagination standards:
+ * - GET    /api/v1/users?page=0&size=10&sort=id,asc -> 200 OK with Page<User>
+ * - GET    /api/v1/users/{id}                       -> 200 OK (or 404 Not Found)
+ * - POST   /api/v1/users                            -> 201 Created with Location header
+ * - PUT    /api/v1/users/{id}                       -> 200 OK (Full Update / Idempotent)
+ * - PATCH  /api/v1/users/{id}                       -> 200 OK (Partial Update)
+ * - DELETE /api/v1/users/{id}                       -> 204 No Content (Idempotent)
  */
 @RestController
 @RequestMapping("/api/v1/users")
@@ -28,9 +31,15 @@ public class UserController {
         this.userService = userService;
     }
 
+    /**
+     * Paginated user list.
+     * Prevents OutOfMemoryError in production when user table has millions of rows.
+     */
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<Page<User>> getAllUsers(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<User> users = userService.getAllUsers(pageable);
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
@@ -42,7 +51,6 @@ public class UserController {
     public ResponseEntity<User> createUser(@RequestBody User user) {
         User created = userService.createUser(user);
 
-        // Standard REST pattern: Include 'Location' header pointing to new resource URI
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(created.getId())

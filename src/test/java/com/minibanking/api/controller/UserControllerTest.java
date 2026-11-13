@@ -10,6 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -36,15 +40,18 @@ class UserControllerTest {
     private UserService userService;
 
     @Test
-    @DisplayName("GET /api/v1/users should return HTTP 200 OK")
+    @DisplayName("GET /api/v1/users should return HTTP 200 OK with paginated users")
     void getAllUsers_Returns200() throws Exception {
         User user = new User(1L, "Alice Smith", "alice@bank.com", "USER", Instant.now());
-        when(userService.getAllUsers()).thenReturn(List.of(user));
+        Page<User> page = new PageImpl<>(List.of(user), PageRequest.of(0, 10), 1);
+        when(userService.getAllUsers(any(Pageable.class))).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/users"))
+        mockMvc.perform(get("/api/v1/users?page=0&size=10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].fullName").value("Alice Smith"))
-                .andExpect(jsonPath("$[0].email").value("alice@bank.com"));
+                .andExpect(jsonPath("$.content[0].fullName").value("Alice Smith"))
+                .andExpect(jsonPath("$.content[0].email").value("alice@bank.com"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1));
     }
 
     @Test

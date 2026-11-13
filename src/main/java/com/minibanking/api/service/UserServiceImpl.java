@@ -4,6 +4,8 @@ import com.minibanking.api.exception.DuplicateResourceException;
 import com.minibanking.api.exception.ResourceNotFoundException;
 import com.minibanking.api.model.User;
 import com.minibanking.api.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +25,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    @Override
+    public Page<User> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
     @Override
@@ -48,7 +55,6 @@ public class UserServiceImpl implements UserService {
     public User updateUser(Long id, User incoming) {
         User existing = getUserById(id);
 
-        // Check email uniqueness if email has changed
         if (!existing.getEmail().equalsIgnoreCase(incoming.getEmail()) &&
                 userRepository.existsByEmail(incoming.getEmail())) {
             throw new DuplicateResourceException("Email is already registered: " + incoming.getEmail());

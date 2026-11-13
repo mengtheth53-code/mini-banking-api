@@ -1,15 +1,15 @@
 package com.minibanking.api.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * JPA Entity mapped to the PostgreSQL "users" table.
- * 
- * - @Entity: Marks this class as a persistent database entity managed by Hibernate.
- * - @Table: Specifies the physical database table name ("users").
- * - @Id: Declares the Primary Key.
- * - @GeneratedValue: Uses PostgreSQL BIGSERIAL / IDENTITY auto-incrementing strategy.
+ * Linked to Account via @OneToMany relationship.
  */
 @Entity
 @Table(name = "users")
@@ -32,9 +32,16 @@ public class User {
     private Instant createdAt;
 
     /**
-     * Default no-arg constructor required by JPA specification
-     * for Hibernate reflection and entity instantiation.
+     * One User can own Many Bank Accounts.
+     * - mappedBy = "user": Indicates the foreign key is managed by the 'user' field in Account.
+     * - cascade = CascadeType.ALL: Operations on User (persist, remove) cascade to their Accounts.
+     * - orphanRemoval = true: Removing an account from this list deletes it from the database.
+     * - fetch = FetchType.LAZY: Accounts are NOT loaded until explicitly accessed.
      */
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Account> accounts = new ArrayList<>();
+
     public User() {
     }
 
@@ -46,15 +53,22 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    /**
-     * JPA Entity Lifecycle Callback:
-     * Automatically sets createdAt right before Hibernate issues the SQL INSERT.
-     */
     @PrePersist
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = Instant.now();
         }
+    }
+
+    // Helper methods for bidirectional synchronization
+    public void addAccount(Account account) {
+        accounts.add(account);
+        account.setUser(this);
+    }
+
+    public void removeAccount(Account account) {
+        accounts.remove(account);
+        account.setUser(null);
     }
 
     public Long getId() {
@@ -95,5 +109,13 @@ public class User {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public List<Account> getAccounts() {
+        return accounts;
+    }
+
+    public void setAccounts(List<Account> accounts) {
+        this.accounts = accounts;
     }
 }
